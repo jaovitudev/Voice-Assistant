@@ -1,0 +1,47 @@
+@'
+import sounddevice as sd
+import speech_recognition as sr
+from openai import OpenAI
+
+FREQUENCIA = 16000
+DURACAO = 10
+
+print("Fale agora... você tem 10 segundos.")
+
+amostra = sd.rec(
+    int(DURACAO * FREQUENCIA),
+    samplerate=FREQUENCIA,
+    channels=1,
+    dtype="int16"
+)
+
+sd.wait()
+
+reconhecedor = sr.Recognizer()
+audio = sr.AudioData(amostra.tobytes(), FREQUENCIA, 2)
+
+try:
+    texto = reconhecedor.recognize_google(audio, language="pt-BR")
+    print("Você disse:", texto)
+
+    cliente = OpenAI()
+    resposta = cliente.responses.create(
+        model="gpt-5.6-luna",
+        instructions=(
+            "Você é um assistente de voz prestativo. "
+            "Responda sempre em português do Brasil, em no máximo duas frases."
+        ),
+        input=texto,
+    )
+
+    print("Assistente:", resposta.output_text)
+
+except sr.UnknownValueError:
+    print("Não consegui entender o que foi dito.")
+
+except sr.RequestError as erro:
+    print("Erro ao acessar o reconhecimento de voz:", erro)
+
+except Exception as erro:
+    print("Erro ao consultar a IA:", erro)
+'@ | Set-Content -Encoding utf8 .\main.py
